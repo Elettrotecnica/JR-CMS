@@ -1,0 +1,188 @@
+body {
+  font-family: arial;
+  color:black;
+}
+
+a {
+  text-decoration:none;
+  color:black;
+}
+
+a:hover {
+  text-decoration:underline;
+}
+
+.selected { 
+  font-weight: bold;
+}
+
+#page {
+  width: 1105px;
+  margin-top: 40px;
+  margin-left: 6%;
+  margin-right: 6%;
+}
+
+#menu1 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  word-spacing: 2px;
+}
+
+#menu2 {
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin-top: 21px;
+}
+
+.menu2Element {
+  margin-right: 62px;
+}
+
+#menu1, #menu2, #menu3 {
+  margin-left:47px;
+}
+
+#menu2ElementSelected, 
+#menu3ElementSelected, 
+#menu4ElementSelected {
+  background-color: black;
+  color: white;
+}
+
+a.menu3ElementUnselected {
+  color: #AAA;
+}
+
+#menu4 {
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+
+#menu4 a {
+    color: red;
+}
+
+#menu5 {
+  width: 193px;
+  float:right;
+  position:relative;
+  top:-10px;
+}
+
+.menu5Element {
+  margin-bottom: 10px;
+  float:right;
+}
+
+.menu5Text {
+  float:left;
+  width:93px;
+  font-size:11px;
+  text-align:right;
+  margin-right:5px;
+  visibility:hidden;
+}
+
+.menu5Image {
+  float:left;
+  width:93px;
+  height:52px;
+  background-position: center center;
+  border: 1px black solid;
+  opacity: .5;
+}
+
+#menu5NextButton, #menu5PrevButton {
+  width:193px;
+  float:right;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  height: 10px;
+}
+
+#menu5PrevButton {
+  background-image: url('../images/prev-vertical.png');
+  margin-bottom:6px;
+}
+
+#menu5NextButton {
+  background-image: url('../images/next-vertical.png');
+}
+
+#menu5TextHover {
+  width:91px;
+  visibility:visible;
+}
+
+#menu5ImageHover {
+  border: 2px black solid;
+  height:50px;
+  width:91px;
+  opacity:1.0;
+}
+
+#menu5TextSelected {
+  width:89px;
+  visibility:visible;
+}
+
+#menu5ImageSelected {
+  border: 3px black solid;
+  height:48px;
+  width:89px;
+  opacity:1.0;
+}
+
+#galleryElement {
+  float:left;
+  width:463px;
+  position:relative;
+  right:14px;
+}
+
+#gallerySelectors {
+  width:104px;
+  float:left;
+}
+
+.gallerySelector {
+  width:8px;
+  height:8px;
+  border: 1px black solid;
+  margin-bottom:3px;
+  /* for IE */
+  overflow:hidden;
+}
+
+#gallerySelectorSelected {
+  background-color: black;
+}
+
+#galleryHiddenElements {
+  display:none;
+}
+
+.menuNElement {
+  margin-top: 18px;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+#sidemenus {
+  float:left;
+  width:100px; 
+}
+
+#content {
+  float:left;
+  width:580px;
+  margin-left: 220px;
+  margin-top: 93px;
+}
+
+#titleRuler {
+  width:100%;
+  border-bottom: 1px black solid;
+}

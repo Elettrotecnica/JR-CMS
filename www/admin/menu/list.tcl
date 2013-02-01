@@ -1,0 +1,179 @@
+ad_page_contract {
+
+    Mostra e gestisce la struttura del sito
+
+    @author Antonio Pisano
+    @cvs-id $Id:
+} {
+    {locale ""}
+}
+
+set package_key "jr-cms"
+
+# Profondità massima dell'albero dei menu.
+set max_menu_depth [parameter::get_from_package_key -package_key $package_key -parameter max_depth]
+
+
+set tree_id [jrcms::tree_id]
+
+
+set page_title "Gestione Menu"
+set context [list $page_title]
+
+
+# Azioni di massa
+set bulk_actions {
+    "Elimina"              "delete"            "Elimina le voci selezionate"
+    "Aggiorna ordinamento" "tree-order-update" "Aggiorna l'ordinamento delle voci"
+}
+
+set add_url [export_vars -no_empty -base select-object-type { tree_id locale }]
+
+set parameters_url [export_vars -base "/shared/parameters" {{package_id "[ad_conn package_id]"} {return_url "[ad_conn url]"}}]
+
+set files_url "/file-storage/"
+
+# Azioni singole
+set actions [list \
+    "Nuova sezione" $add_url        "Aggiungi una voce in cima alla gerarchia" \
+    "File Manager"  $files_url      "Carica e gestisci i file del sito" \
+    "Parametri"     $parameters_url "Imposta i parametri del sito"
+]
+
+# Azioni sulla riga
+set line_actions {
+    <nobr><a href="@one_tree.parent_url@">Modifica Genitore</a></nobr>
+    <if @one_tree.thumbnail_url@ not nil>
+      <nobr><a href="@one_tree.delete_thumbnail_url@" onClick="return(confirm('Eliminare la thumbnail?'));">Elimina Thumbnail</a></nobr>
+    </if>
+}
+
+# Elementi della lista
+set elements {
+    edit {
+	sub_class narrow
+	display_template {
+	    <img src="/resources/acs-subsite/Edit16.gif" height="16" width="16" alt="Edit" style="border:0">
+	}
+	link_url_col edit_url
+	link_html {title "Edita questa voce"}
+    }
+    add_child {
+	sub_class narrow
+	display_template {
+	    <if @one_tree.add_url@ ne ""><img src="/resources/acs-subsite/Add16.gif" height="16" width="16" alt="Add" style="border:0"></if>
+	}
+	link_url_col add_url
+	link_html { title "Aggiungi una sotto voce" }
+    }
+    title {
+	label "Titolo"
+	display_template {
+	    <nobr>@one_tree.left_indent;noquote@@one_tree.title@</nobr>
+	}
+    }
+    description {
+	label "Descrizione"
+	display_template {
+	    @one_tree.description@
+	}
+    }
+    object_type {
+	label "Tipo Oggetto"
+	html {align center}
+	display_template {
+	    @one_tree.object_type@
+	}
+    }
+    thumbnail {
+	label "Anteprima"
+	link_url_col thumbnail_url
+	link_html {target _blank}
+	display_template {
+	    <if @one_tree.thumbnail_url@ not nil><img src='@one_tree.thumbnail_url@' height='50'></if>
+	}
+    }
+    sort_key {
+	label "Ordinamento"
+	display_template {
+	    <input name="sort_key.@one_tree.category_id@" value="@one_tree.sort_key@" size="8">
+	}
+    }
+    actions {
+	label "Azioni"
+	display_template $line_actions
+    }
+    delete {
+	sub_class narrow
+	display_template {
+	    <img src="/resources/acs-subsite/Delete16.gif" height="16" width="16" alt="Delete" style="border:0">
+	}
+	link_url_col delete_url
+	link_html { title "Elimina questa voce" }
+    }
+}
+
+
+# Recupero i dati delle voci creando una multirow.
+template::multirow create one_tree category_id title sort_key deprecated_p level left_indent
+
+set sort_key 0
+
+# Dati della category
+foreach category [category_tree::get_tree -all $tree_id $locale] {
+    util_unlist $category category_id category_name deprecated_p level
+    
+    incr sort_key 10
+    
+    set left_indent "[string repeat "&nbsp;" [expr {($level-1)*8}]]"
+    
+    if {$level > 1} {
+	append left_indent "[string repeat - 8]> "
+    }
+    
+    template::multirow append one_tree $category_id $category_name $sort_key $deprecated_p $level $left_indent
+}
+
+# Dati del jr_object
+multirow extend one_tree description thumbnail_url object_type
+multirow foreach one_tree {
+    jrcms::api::object::get -item_id $category_id -array object
+    
+    set object_type   $object(object_type)
+    set description   $object(description)
+    set thumbnail_url $object(thumbnail_url)
+    
+    set object_type [db_string query "select pretty_name from acs_object_types where object_type = :object_type"]
+    if {[regexp {(^JR\ )(.*)} $object_type match prefix type]} {
+	set object_type $type
+    }
+    
+    if {[string length $description] > 500} {
+	set description "[string range $description 0 500]..."
+    }
+}
+
+# URL per le varie gestioni
+multirow extend one_tree add_url edit_url delete_url parent_url delete_thumbnail_url
+multirow foreach one_tree {
+    # Al raggiungimento della profondità massima non consentirò più di aggiungere sotto voci.
+    set add_url ""
+    if {$level <= $max_menu_depth} {
+	set add_url [export_vars -no_empty -base "select-object-type" { {parent_id $category_id} tree_id locale }]
+    }
+    set edit_url [export_vars -no_empty -base add-edit { category_id tree_id locale }]
+    set delete_url [export_vars -no_empty -base delete { category_id tree_id locale }]
+    set parent_url [export_vars -no_empty -base parent-change { category_id tree_id locale }]
+    set delete_thumbnail_url [export_vars -no_empty -base delete-thumbnail { category_id locale }]
+}
+
+
+template::list::create \
+    -name one_tree \
+    -elements $elements \
+    -key category_id \
+    -actions $actions \
+    -bulk_action_method "post" \
+    -bulk_actions $bulk_actions \
+    -bulk_action_export_vars { tree_id locale }
+

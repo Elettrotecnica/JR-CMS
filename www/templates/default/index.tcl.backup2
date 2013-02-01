@@ -1,0 +1,127 @@
+ad_page_contract {
+
+    Homepage Template
+    
+    @author Antonio Pisano
+    @cvs-id $Id:
+} {
+    {object_id ""}
+    {locale ""}
+}
+
+# nome del package
+set package_key [ad_conn package_key]
+
+# Nome del sito
+set site_name [parameter::get_from_package_key -package_key $package_key -parameter site_name]
+
+# Il template ha bisogno di TUTTI i dati degli oggetti? (peggiora le performance)
+set get_all_object_data_p f
+
+# Id dell'albero.
+set tree_id [jrcms::tree_id]
+
+# Tutto l'albero del sito, recuperato dalla cache.
+set tree [category_tree::get_tree -all $tree_id $locale]
+
+# Se non abbiamo selezionato nulla, prendo l'id della homepage.
+set homepage_id [lindex [lindex $tree 0] 0]
+
+if {$object_id eq ""} {
+    set object_id $homepage_id
+}
+
+# Tutti gli antenati dell'oggetto selezionato (compreso se stesso): sono la 'scia di selezione'.
+set ancestors [concat $object_id [jrcms::category::get_ancestors -category_id $object_id]]
+foreach ancestor_id $ancestors {
+    set is_selected($ancestor_id) 1
+}
+
+set is_gallery_p [db_0or1row query "
+  select 1 from jr_galleries
+  where gallery_id = :object_id"]
+
+if {[set children [category::get_children -category_id $object_id]] == 0} {
+    set children [list]
+}
+foreach child_id $children {
+    set is_child($child_id) 1
+}
+
+# ...che assieme agli altri 'parenti' dell'oggetto selezionato saranno gli oggetti mostrati.
+set relatives [concat $children [jrcms::category::get_relatives -category_id $object_id]]
+foreach relative_id $relatives {
+    set is_shown($relative_id) 1
+}
+
+if {$get_all_object_data_p} {
+    # Scorro gli id di tutti gli oggetti che dovrò mostrare. Per ciascuno recupero i dati dell'oggetto, salvandoli in un array chiamato come l'id.
+    foreach shown_id [array names is_shown] {
+	jrcms::get_object -item_id $shown_id -locale $locale -array $shown_id
+    }
+}
+
+# Scorro tutto l'albero e...
+foreach category $tree {
+    util_unlist $category category_id category_name deprecated_p level
+    
+    # ...se la voce è quella selezionata...
+    if {$category_id == $object_id} {
+	# ...ed è una galleria, e ho delle sotto-voci seleziono la prima come predefinita...
+	if {$is_gallery_p} {
+	    set object_subtree [category_tree::get_tree -all -subtree_id $object_id $tree_id $locale]
+	    if {[llength $object_subtree] > 0} {
+		set object_id [lindex [lindex $object_subtree 0] 0]
+		set is_selected($object_id) 1
+	    }
+	}
+	
+	set object_name $category_name
+    }
+    
+    # ...se l'oggetto è da visualizzare...
+    if {[info exists is_shown($category_id)]} {
+	
+	# ...se è figlia dell'oggetto selezionato...
+	set is_child_p [info exists is_child($category_id)]
+	
+	# ...se l'elemento è figlio di una galleria...
+	if {$is_gallery_p && $is_child_p} {
+	    set menu_name "gallery"
+	} else {
+	    set menu_name "menu${level}"
+	}
+	
+	# ...se è selezionata...
+	set is_selected_p [info exists is_selected($category_id)]
+	
+	# costruisco il pretty_url della voce risalendo i suoi genitori.
+	set ancestor_names [list [ns_urlencode $category_name]]
+	
+	foreach ancestor_id [jrcms::category::get_ancestors -category_id $category_id] {
+	    set ancestor_names [linsert $ancestor_names 0 [ns_urlencode [category::get_name $ancestor_id $locale]]]
+	}
+	
+	set base_url [join $ancestor_names "/"]
+	
+	set category_url [export_vars -no_empty -base /$package_key/$base_url {locale}]
+	
+	# ...se già non esisteva, creo la multirow che conterrà tutti gli elementi del menu
+	if {![template::multirow exists $menu_name]} {
+	    template::multirow create $menu_name category_id category_name category_url is_selected_p is_child_p
+	}
+	
+	template::multirow append $menu_name $category_id $category_name $category_url $is_selected_p $is_child_p
+    }
+}
+
+# Il delle gallerie deve mostrare la thumbnail
+if {[template::multirow exists gallery]} {
+    template::multirow extend gallery thumbnail_url
+    
+    template::multirow foreach gallery {
+	jrcms::api::object::get -item_id $category_id -array object
+	
+	set thumbnail_url $object(thumbnail_url)
+    }
+}

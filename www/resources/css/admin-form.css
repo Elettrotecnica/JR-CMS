@@ -1,0 +1,24 @@
+
+td.filter-label {
+    background-color: #e9e9e9;
+    text-align: left;
+    padding-left: 6px; 
+    padding-right: 6px;
+    font-family: tahoma,verdana,arial,helvetica,sans-serif;
+    font-size: 70%;
+}
+
+td.filter-label-error {
+    background-color: #ffaaaa;
+    text-align: left;
+    padding-left: 6px; 
+    padding-right: 6px;
+    font-size: 70%;
+}
+
+legend {
+    font-size: 100%;
+    font-weight: bold;
+    background-color: #efefef;
+    padding: 3px;
+}

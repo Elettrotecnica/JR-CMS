@@ -1,0 +1,75 @@
+# 
+#
+# Regole di redirezione url per JR-CMS
+#
+# Riassunto: le richieste puntuali verranno risolte normalmente. Le pagine che non vengono trovate al percorso indicato vengono cercate
+# nella cartella del template in uso. Se ancora non esistono, si tratta il percorso come un cammino nella gerarchia del sito.
+# @author Antonio Pisano
+
+# nome del package
+set package_key "jr-cms"
+
+# root del package
+set package_root [acs_package_root_dir $package_key]
+
+# template in uso nel sito
+set template [parameter::get_from_package_key -package_key $package_key -parameter template]
+
+# root del template
+set template_root "${package_root}/www/templates/$template"
+
+
+# richiesta ricevuta dal server
+# mi serve la richiesta 'cruda', perchè ho bisogno di capire se caratteri come lo '/'
+# sono stati soggetto di escape, o se indicano proprio una cartella...
+set query [lindex [split [ns_conn request] " "] 1]
+
+# elimino il path del package dalla richiesta
+regexp "(^/$package_key/)(.*)" $query match package_path query
+
+# Creo una lista con tutto il path della richiesta
+# Elimino gli slash all'inizio e alla fine per evitare elementi vuoti nella lista.
+set request_path [split [string trim $query "/"] "/"]
+
+# Provo a vedere se ho la pagina richiesta nella cartella del template.
+if {![catch { rp_internal_redirect -absolute_path "${template_root}/$query" }]} {
+    ad_script_abort
+}
+
+
+# Se non trovo quello che mi hanno chiesto nella cartella del template,
+# allora tratto la richiesta come un percorso nella gerarchia del sito:
+# /argomento/sottoargomento/elementocercato
+
+# Id dell'albero.
+set tree_id [jrcms::tree_id]
+
+# Tutto l'albero del sito, recuperato dalla cache.
+set tree [category_tree::get_tree -all $tree_id ""]
+
+set path_depth 0
+
+# Scorro tutto l'albero e...
+foreach category $tree {
+    util_unlist $category category_id category_name deprecated_p level
+    
+    # se la voce si trova al livello giusto della gerarchia rispetto al nostro url, e si chiama come l'elemento (codificato)...
+    if {[expr $path_depth + 1] == $level && [ns_urlencode [ns_urldecode [lindex $request_path 0]]] eq [ns_urlencode $category_name]} {
+	# ...scendo di un livello.
+	set request_path [lrange $request_path 1 end]
+	incr path_depth
+    }
+    
+    # se ho trovato tutte le componenti dell'url nell'albero delle voci,
+    # mando alla pagina appropriata.
+    if {[llength $request_path] == 0} {
+	rp_form_put object_id $category_id
+	rp_internal_redirect -absolute_path "${template_root}/index"
+	ad_script_abort
+    }
+}
+
+ns_returnnotfound
+ad_script_abort
+
+

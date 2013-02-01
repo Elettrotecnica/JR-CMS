@@ -1,0 +1,255 @@
+<html>
+  <head>
+    <title>@site_name@<if @object_id@ ne @homepage_id@>- @object_name@</if></title>
+    <link rel="stylesheet" href="/@package_key@/css/style.css" type="text/css" media="all">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <script src="/resources/jquery/jquery.js"></script>
+    <script src="http://static.ak.fbcdn.net/connect.php/js/FB.Share" type="text/javascript"></script>
+  </head>
+  <body>
+    <!--     Contenitore dell'intera pagina -->
+    <div id="page">
+      <if @menu1:rowcount@ defined>
+	<div id="topMenus">
+	<!--       Menu 1 -->
+	<div id="menu1">
+	  <multiple name="menu1">
+	    <a href='@menu1.category_url@'>@menu1.category_name@</a>
+	  </multiple>
+	</div>
+	<div id="titleRuler"></div>
+	<a id="fb_share" name="fb_share"></a>
+	  <if @menu2:rowcount@ defined>
+	  <!--       Menu 2 -->
+	  <div id="menu2">
+	    <multiple name="menu2">
+	      <span class="menu2Element">
+		<if @menu2.is_selected_p@ ><a href='@menu2.category_url@' id="menu2ElementSelected">@menu2.category_name@</a></if>
+		<else><a href='@menu2.category_url@'>@menu2.category_name@</a></else>
+	      </span>
+	    </multiple>
+	  </div>
+	  </if>
+	</div>
+      <div id="sideMenus" class="menus">
+	  <if @menu3:rowcount@ defined>
+	  <!--       Menu 3 -->
+	  <div id="menu3">
+	    <multiple name="menu3">
+	      <div class="menuNElement">
+		<if @menu3.is_child_p@ true>
+		  <a href='@menu3.category_url@'>@menu3.category_name@</a>
+		</if>
+		<elseif @menu3.is_selected_p@ >
+		  <a href='@menu3.category_url@' id="menu3ElementSelected">@menu3.category_name@</a>
+		  <if @menu4:rowcount@ defined>
+		    <!--       Menu 4 -->
+		    <div id="menu4">
+		      <div id="menu4Elements">
+		      <multiple name="menu4">
+			<if @menu4.is_selected_p@ >
+			  <a href='@menu4.category_url@' class="menu4Element" id="menu4ElementSelected">
+			</if>
+			<else>
+			  <a href='@menu4.category_url@' class="menu4Element">
+			</else>
+			    <div class="menu4Element">@menu4.category_name@</div>
+			  </a>
+		      </multiple>
+		      </div>
+		    </div>
+		    <script type="text/javascript">
+		      $(function() {
+			  // Se questo è l'ultimo menu, quindi è appena  comparso...
+			  if ($('#menu4ElementSelected').length == 0) {
+			    var menu4Height = $('#menu4').outerHeight();
+			    
+			    // Il menu appare scorrendo dall'alto...
+			    $('#menu4').hide().slideDown('slow');
+			    
+			    // ...e contemporaneamente il suo contenuto si sposta verso il basso.
+			    $('#menu4Elements').css('top','-' + menu4Height).animate({
+			      top: '+=' + menu4Height
+			    }, 'slow');
+			  }
+			  
+			  // Tutti i link del 3° menu, quando cliccati...
+			  $('.menuNElement > a').click(function () {
+			    // ...fanno sparire il menu4
+			    $('#menu4').slideUp('slow');
+			    
+			    var link = this;
+			    // e mandano al loro link.
+			    $('#menu4Elements').animate({
+			      top: '-=' + menu4Height
+			    }, 'slow', 'swing', function () {
+			      window.location = link.href;
+			    });
+			    
+			    // Cosa accade alla pressione del link l'ho deciso io. Fermo il gestore di default.
+			    return false;
+			  });
+		      });
+		    </script>
+		  </if>
+		</elseif>
+		<else>
+		  <a href='@menu3.category_url@' class="menu3ElementUnselected">@menu3.category_name@</a>
+		</else>
+	      </div>
+	    </multiple>
+	  </div>
+	 </if>
+	 &nbsp;
+      </div>
+      </if>
+      <div id="content">
+	<if @object_id@ eq @homepage_id@>
+	  <include src="homepage" object_id="@object_id@" locale="@locale@"></div>
+	</if>
+	<elseif @galleryMenu:rowcount@ defined>
+	  <include src="gallery-folder" object_id="@object_id@" locale="@locale@"></div>
+	</elseif>
+	<else>
+	  <include src="object" object_id="@object_id@" locale="@locale@"></div>
+	</else>
+      <if @galleryMenu:rowcount@ defined>
+	<div id="galleryMenu">
+	  <div class="galleryMenuButton" id="galleryMenuPrevButton">&nbsp;</div>
+	    <div id="galleryMenuElements">
+	    <multiple name="galleryMenu">
+	      <div class="galleryMenuElement">
+		<if @galleryMenu.is_selected_p@ >
+		  <div class="galleryMenuText" id="galleryMenuTextSelected">@galleryMenu.category_name;noquote@</div>
+		  <div href='@galleryMenu.category_url@' class="galleryMenuImage" id="galleryMenuImageSelected" style="background-image: url(@galleryMenu.thumbnail_url@)"></div>
+		</if>
+		<else>
+		  <div class="galleryMenuText">@galleryMenu.category_name;noquote@</div>
+		  <div href='@galleryMenu.category_url@' class="galleryMenuImage" style="background-image: url(@galleryMenu.thumbnail_url@)"></div>
+		</else>
+	      </div>
+	    </multiple>
+	  </div>
+	 <div class="galleryMenuButton" id="galleryMenuNextButton">&nbsp;</div>
+	</div>
+	<script type="text/javascript">
+	  $(function() {
+
+	      function galleryMenuSetHover (object) {
+		  object.hover(
+		      function () {
+			  $(this).parent().find('.galleryMenuText').attr('id', 'galleryMenuTextHover')
+			  .end().end()
+			  .attr('id', 'galleryMenuImageHover');
+			  
+			  return false;
+		      },
+		      function () {
+			  $(this).parent().find('*').removeAttr('id');
+			  
+			  return false;
+		      }
+		  )
+	      }
+	      
+	      galleryMenuSetHover($('.galleryMenuImage').not('#galleryMenuImageSelected'));
+	      
+	      $('.galleryMenuImage').click(
+		  function () {
+		     var href = $(this).attr('href');
+		     $.post(href, function(res){
+			$('#content').html(res);
+		     });
+		    
+		     $('#galleryMenuTextSelected').removeAttr('id');
+		     $('#galleryMenuImageSelected').removeAttr('id');
+		     $(this).parent().find('.galleryMenuText').attr('id', 'galleryMenuTextSelected')
+		     .end().end()
+		     .attr('id', 'galleryMenuImageSelected');
+		     
+		     $(this).off('hover');
+		     galleryMenuSetHover($('.galleryMenuImage').not('#galleryMenuImageSelected'));
+		  }
+	      );
+	      
+	      
+	      
+	      var GALLERYMENUSIZE = 8;
+	      
+	      
+	      var galleryMenuElements = $('#galleryMenuElements');
+	      
+	      var galleryMenuLength = galleryMenuElements.find('.galleryMenuElement').length;
+	      
+	      
+	      var galleryMenuNextButton = $('#galleryMenuNextButton');
+	      
+	      var galleryMenuPrevButton = $('#galleryMenuPrevButton');
+	      
+	      
+	      galleryMenuElements.find('> :gt(' + (GALLERYMENUSIZE - 1) + ')').hide();
+	      
+	      
+	      galleryMenuPrevButton.removeAttr('id');
+	      
+	      if (galleryMenuLength <= GALLERYMENUSIZE) {
+		  galleryMenuNextButton.removeAttr('id');
+	      }
+	      
+	      
+	      var galleryMenuIndex = 0;
+	      
+	      galleryMenuNextButton.click(function() {
+		  var first = galleryMenuElements
+		    .find('> :eq(' + galleryMenuIndex + ')');
+		  var next  = galleryMenuElements
+		    .find('> :eq(' + (galleryMenuIndex + GALLERYMENUSIZE) + ')');
+		  
+		  if (next.length > 0) {
+		      first.fadeOut('fast', null, function () { 
+			  next.fadeIn('fast'); 
+		      });
+		      
+		      galleryMenuIndex++;
+		  }
+		  
+		  if ((galleryMenuIndex + GALLERYMENUSIZE) >= galleryMenuLength) {
+		      galleryMenuNextButton.removeAttr('id');
+		  } else {
+		      galleryMenuNextButton.attr('id', 'galleryMenuNextButton');
+		  }
+		  galleryMenuPrevButton.attr('id', 'galleryMenuPrevButton');
+		  
+		  return false;
+	      });
+	      
+	      galleryMenuPrevButton.click(function() {
+		  var first = galleryMenuElements
+		    .find('> :eq(' + (galleryMenuIndex + (GALLERYMENUSIZE - 1)) + ')');
+		  var next  = galleryMenuElements
+		    .find('> :eq(' + (galleryMenuIndex - 1) + ')');
+		  
+		  if (next.length > 0) {
+		      first.fadeOut('fast', null, function () { 
+			  next.fadeIn('fast'); 
+		      });
+		      
+		      galleryMenuIndex--;
+		  }
+		  
+		  if (galleryMenuIndex == 0) {
+		      galleryMenuPrevButton.removeAttr('id');
+		  } else {
+		      galleryMenuPrevButton.attr('id', 'galleryMenuPrevButton');
+		  }
+		  galleryMenuNextButton.attr('id', 'galleryMenuNextButton');
+		  
+		  return false;
+	      });
+
+	  });
+	</script>
+      </if>
+    </div>
+  </body>
+</html>
